@@ -1,0 +1,34 @@
+1. Initialize the project
+mkdir product-inventory-management
+cd product-inventory-management
+npm init -y
+
+2. Install required packages
+npm install express mongoose dotenv cors bcryptjs jsonwebtoken
+
+3. Install development packages
+npm install --save-dev nodemon
+
+4. Package purpose
+express — Backend web framework
+mongoose — MongoDB database connection and models
+dotenv — Environment variables
+cors — Cross-Origin Resource Sharing
+bcryptjs — Password hashing
+jsonwebtoken — JWT authentication
+nodemon — Automatically restarts the server during development
+5. Update package.json
+Add these scripts:
+{
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  }
+}
+
+6. Start the server
+For development:
+npm run dev
+
+For production:
+npm start
