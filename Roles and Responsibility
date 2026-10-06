@@ -1,0 +1,234 @@
+Roles and Responsibilities
+Role	Responsibilities
+Admin	Manage users, products, categories, suppliers, inventory, and system settings
+Inventory Manager	Add/update products, monitor stock, manage stock-in/stock-out, generate inventory reports
+Sales Staff	Create sales/orders, check product availability, update sold quantities
+Purchase Manager	Manage suppliers, create purchase orders, record incoming stock
+Warehouse Staff	Receive products, update stock quantities, manage warehouse operations
+Viewer	View products, stock levels, and reports without modifying data
+
+Suggested Project Structure
+product-inventory-management/
+│
+├── README.md
+├── package.json
+├── .env
+├── .gitignore
+│
+├── src/
+│   ├── config/
+│   │   └── database.js
+│   │
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── productController.js
+│   │   ├── inventoryController.js
+│   │   ├── supplierController.js
+│   │   ├── purchaseController.js
+│   │   └── userController.js
+│   │
+│   ├── models/
+│   │   ├── User.js
+│   │   ├── Product.js
+│   │   ├── Category.js
+│   │   ├── Supplier.js
+│   │   ├── Inventory.js
+│   │   └── Purchase.js
+│   │
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── productRoutes.js
+│   │   ├── inventoryRoutes.js
+│   │   ├── supplierRoutes.js
+│   │   ├── purchaseRoutes.js
+│   │   └── userRoutes.js
+│   │
+│   ├── middleware/
+│   │   ├── authMiddleware.js
+│   │   └── roleMiddleware.js
+│   │
+│   ├── services/
+│   │   ├── inventoryService.js
+│   │   └── productService.js
+│   │
+│   └── app.js
+│
+└── tests/
+    ├── product.test.js
+    ├── inventory.test.js
+    └── auth.test.js
+
+Role-Based Authorization
+A simple middleware can control which users can access each operation:
+// src/middleware/roleMiddleware.js
+
+const authorizeRoles = (...allowedRoles) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({
+                message: "Authentication required"
+            });
+        }
+
+        if (!allowedRoles.includes(req.user.role)) {
+            return res.status(403).json({
+                message: "Access denied"
+            });
+        }
+
+        next();
+    };
+};
+
+module.exports = authorizeRoles;
+
+Example Product Routes
+// src/routes/productRoutes.js
+
+const express = require("express");
+const router = express.Router();
+
+const authMiddleware = require("../middleware/authMiddleware");
+const authorizeRoles = require("../middleware/roleMiddleware");
+
+const {
+    getProducts,
+    createProduct,
+    updateProduct,
+    deleteProduct
+} = require("../controllers/productController");
+
+// Anyone authenticated can view products
+router.get(
+    "/",
+    authMiddleware,
+    authorizeRoles(
+        "admin",
+        "inventory_manager",
+        "sales_staff",
+        "purchase_manager",
+        "warehouse_staff",
+        "viewer"
+    ),
+    getProducts
+);
+
+// Admin and Inventory Manager can create products
+router.post(
+    "/",
+    authMiddleware,
+    authorizeRoles("admin", "inventory_manager"),
+    createProduct
+);
+
+// Admin and Inventory Manager can update products
+router.put(
+    "/:id",
+    authMiddleware,
+    authorizeRoles("admin", "inventory_manager"),
+    updateProduct
+);
+
+// Only Admin can delete products
+router.delete(
+    "/:id",
+    authMiddleware,
+    authorizeRoles("admin"),
+    deleteProduct
+);
+
+module.exports = router;
+
+Example Product Model
+// src/models/Product.js
+
+const mongoose = require("mongoose");
+
+const productSchema = new mongoose.Schema(
+    {
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
+
+        sku: {
+            type: String,
+            required: true,
+            unique: true
+        },
+
+        category: {
+            type: String,
+            required: true
+        },
+
+        price: {
+            type: Number,
+            required: true,
+            min: 0
+        },
+
+        quantity: {
+            type: Number,
+            required: true,
+            default: 0,
+            min: 0
+        },
+
+        reorderLevel: {
+            type: Number,
+            default: 10
+        },
+
+        supplier: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Supplier"
+        }
+    },
+    {
+        timestamps: true
+    }
+);
+
+module.exports = mongoose.model("Product", productSchema);
+
+Main Modules
+Authentication
+     │
+     ├── Login / Logout
+     ├── Registration
+     └── Role-based authorization
+     
+Product Management
+     │
+     ├── Add Product
+     ├── Update Product
+     ├── Delete Product
+     └── View Products
+
+Inventory Management
+     │
+     ├── Stock In
+     ├── Stock Out
+     ├── Low Stock Alerts
+     └── Inventory Reports
+
+Supplier Management
+     │
+     ├── Add Supplier
+     ├── Update Supplier
+     └── Supplier History
+
+Purchase Management
+     │
+     ├── Purchase Orders
+     ├── Receive Products
+     └── Update Inventory
+
+Reports
+     │
+     ├── Stock Report
+     ├── Sales Report
+     ├── Purchase Report
+     └── Low Stock Report
